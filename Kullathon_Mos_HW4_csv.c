@@ -41,7 +41,7 @@ bool is_valid_row(char *line)
             quotes++;
         }
     }
-    return !quotes || (quotes % 2) == 0;
+    return (quotes % 2) == 0;
 }
 
 // Function to read a line from the CSV file

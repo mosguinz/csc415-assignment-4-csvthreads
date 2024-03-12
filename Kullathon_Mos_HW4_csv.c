@@ -11,27 +11,24 @@
  *
  **************************************************************/
 
-#include "Kullathon_Mos_HW4_csv.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 
-// Function prototypes
-char **csvopen(char *filename);
-char **csvnext(void);
-char **csvheader(void);
-int csvclose(void);
+#include "Kullathon_Mos_HW4_csv.h"
 
-// Global variables
 static FILE *csv_file = NULL;
 static char **header = NULL;
 static char *current_line = NULL;
 static size_t current_line_size = 0;
 static int lines_read = -1;
 
-// Check if the provided line is a valid CSV row.
-bool is_valid_row(char *line)
+/**
+ * Check if the provided line is a valid CSV row.
+ * A row is complete when all opened quotes are closed.
+ */
+static bool is_valid_row(char *line)
 {
     int quotes = 0;
     for (int i = 0; i < strlen(line); i++)
@@ -44,8 +41,11 @@ bool is_valid_row(char *line)
     return (quotes % 2) == 0;
 }
 
-// Function to read a line from the CSV file
-char *read_line(void)
+/**
+ * Get the next valid row in the CSV file. The string returned by
+ * this function is guaranteed to be valid.
+ */
+static char *read_row(void)
 {
     char *line = malloc(1);
     line[0] = '\0';
@@ -61,11 +61,6 @@ char *read_line(void)
             free(fragment);
             if (is_valid_row(line))
             {
-                // Remove newline character
-                // if (line[length - 1] == '\n')
-                //     line[length - 1] = '\0';
-                // printf("Line:   %s\n", line);
-
                 return line;
             }
         }
@@ -83,12 +78,6 @@ static char **parse_csv_line(char *line)
 {
     // Allocate memory for an initial number of fields
     char **fields = NULL;
-    // if (!fields)
-    // {
-    //     fprintf(stderr, "Memory allocation error\n");
-    //     exit(EXIT_FAILURE);
-    // }
-
     int field_count = 0;
     bool in_quotes = false;
     char *field = (char *)malloc(strlen(line) + 1);
@@ -107,12 +96,10 @@ static char **parse_csv_line(char *line)
         {
             // Toggle in_quotes
             in_quotes = !in_quotes;
-            printf(" Quotes\n");
 
             // Handle consecutive quotes inside a quoted field ("")
             if (line[i + 1] == '"')
             {
-                printf("  We in double quote\n");
                 in_quotes = !in_quotes;
 
                 if (in_quotes)
@@ -126,7 +113,6 @@ static char **parse_csv_line(char *line)
         else if (line[i] == ',' && !in_quotes)
         {
             // End of field
-            printf(" Comma\n");
             field[field_size] = '\0';
             fields[field_count++] = strdup(field);
             field_size = 0;
@@ -135,11 +121,9 @@ static char **parse_csv_line(char *line)
         else if (line[i] == '\n' && !in_quotes)
         {
             // End of line
-            printf(" End of row\n");
             field[field_size] = '\0';
             fields[field_count++] = strdup(field);
             field_size = 0;
-            printf("im boutta come\n"); // doesn't break
             break;
         }
         else
@@ -152,11 +136,6 @@ static char **parse_csv_line(char *line)
     free(field);
     field = NULL;
 
-    for (int i = 0; i < field_count; i++)
-    {
-        printf("%d: %s\n", i, fields[i]);
-    }
-
     // Reallocate memory to fit actual number of fields
     fields = realloc(fields, (field_count + 1) * sizeof(char *));
     fields[field_count] = NULL;
@@ -165,7 +144,6 @@ static char **parse_csv_line(char *line)
     return fields;
 }
 
-// Function implementations
 char **csvopen(char *filename)
 {
     csv_file = fopen(filename, "r");
@@ -176,8 +154,7 @@ char **csvopen(char *filename)
     }
 
     // Read header
-    current_line = read_line();
-    printf("Current line: %s\n", current_line);
+    current_line = read_row();
     if (!current_line)
     {
         fclose(csv_file);
@@ -196,7 +173,7 @@ char **csvnext(void)
 
     // Read next line
     free(current_line);
-    current_line = read_line();
+    current_line = read_row();
     if (!current_line)
         return NULL;
 

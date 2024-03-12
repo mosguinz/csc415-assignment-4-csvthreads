@@ -1,0 +1,237 @@
+/**************************************************************
+ * Class::  CSC-415-03 Spring 2024
+ * Name::  Mos Kullathon
+ * Student ID::  921425216
+ * GitHub-Name::  mosguinz
+ * Project::  Assignment 4 – Processing CSV Data with Threads
+ *
+ * File::  Kullathon_Mos_HW4_csv.c
+ *
+ * Description::
+ *
+ **************************************************************/
+
+#include "Kullathon_Mos_HW4_csv.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
+// Function prototypes
+char **csvopen(char *filename);
+char **csvnext(void);
+char **csvheader(void);
+int csvclose(void);
+
+// Global variables
+static FILE *csv_file = NULL;
+static char **header = NULL;
+static char *current_line = NULL;
+static size_t current_line_size = 0;
+static int lines_read = -1;
+
+// Check if the provided line is a valid CSV row.
+bool is_valid_row(char *line)
+{
+    int quotes = 0;
+    for (int i = 0; i < strlen(line); i++)
+    {
+        if (line[i] == '"')
+        {
+            quotes++;
+        }
+    }
+    return (quotes % 2) == 0;
+}
+
+// Function to read a line from the CSV file
+char *read_line(void)
+{
+    char *line = malloc(1);
+    line[0] = '\0';
+    char *fragment = NULL;
+
+    size_t length;
+    while (1)
+    {
+        if ((length = getline(&fragment, &current_line_size, csv_file)) != -1)
+        {
+            line = realloc(line, (strlen(line) + strlen(fragment) + 1) * sizeof(char *));
+            strcat(line, fragment);
+            free(fragment);
+            if (is_valid_row(line))
+            {
+                // Remove newline character
+                // if (line[length - 1] == '\n')
+                //     line[length - 1] = '\0';
+                // printf("Line:   %s\n", line);
+
+                return line;
+            }
+        }
+        else
+        {
+            free(line);
+            free(fragment);
+            return NULL;
+        }
+    }
+}
+
+// Function to parse a CSV line into fields
+static char **parse_csv_line(char *line)
+{
+    // Allocate memory for an initial number of fields
+    char **fields = NULL;
+    // if (!fields)
+    // {
+    //     fprintf(stderr, "Memory allocation error\n");
+    //     exit(EXIT_FAILURE);
+    // }
+
+    int field_count = 0;
+    bool in_quotes = false;
+    char *field = (char *)malloc(strlen(line) + 1);
+    if (!field)
+    {
+        fprintf(stderr, "Memory allocation error\n");
+        exit(EXIT_FAILURE);
+    }
+    size_t field_size = 0;
+
+    for (size_t i = 0; line[i] != '\0'; i++)
+    {
+        fields = realloc(fields, (field_count + 1) * sizeof(char *));
+
+        if (line[i] == '"')
+        {
+            // Toggle in_quotes
+            in_quotes = !in_quotes;
+            printf(" Quotes\n");
+
+            // Handle consecutive quotes inside a quoted field ("")
+            if (line[i + 1] == '"')
+            {
+                printf("  We in double quote\n");
+                in_quotes = !in_quotes;
+
+                if (in_quotes)
+                {
+                    field[field_size++] = '"';
+                }
+                i++; // Skip the next quote
+                continue;
+            }
+        }
+        else if (line[i] == ',' && !in_quotes)
+        {
+            // End of field
+            printf(" Comma\n");
+            field[field_size] = '\0';
+            fields[field_count++] = strdup(field);
+            field_size = 0;
+            continue;
+        }
+        else if (line[i] == '\n' && !in_quotes)
+        {
+            // End of line
+            printf(" End of row\n");
+            field[field_size] = '\0';
+            fields[field_count++] = strdup(field);
+            field_size = 0;
+            printf("im boutta come\n"); // doesn't break
+            break;
+        }
+        else
+        {
+            // Add character to field
+            field[field_size++] = line[i];
+        }
+    }
+
+    free(field);
+    field = NULL;
+
+    for (int i = 0; i < field_count; i++)
+    {
+        printf("%d: %s\n", i, fields[i]);
+    }
+
+    // Reallocate memory to fit actual number of fields
+    fields = realloc(fields, (field_count + 1) * sizeof(char *));
+    fields[field_count] = NULL;
+
+    lines_read++;
+    return fields;
+}
+
+// Function implementations
+char **csvopen(char *filename)
+{
+    csv_file = fopen(filename, "r");
+    if (!csv_file)
+    {
+        perror("Failed to open file");
+        return NULL;
+    }
+
+    // Read header
+    current_line = read_line();
+    printf("Current line: %s\n", current_line);
+    if (!current_line)
+    {
+        fclose(csv_file);
+        return NULL;
+    }
+
+    // Parse header
+    header = parse_csv_line(current_line);
+    return header;
+}
+
+char **csvnext(void)
+{
+    if (!csv_file || feof(csv_file))
+        return NULL;
+
+    // Read next line
+    free(current_line);
+    current_line = read_line();
+    if (!current_line)
+        return NULL;
+
+    return parse_csv_line(current_line);
+}
+
+char **csvheader(void)
+{
+    return header;
+}
+
+int csvclose(void)
+{
+    // Close the file.
+    if (csv_file)
+    {
+        fclose(csv_file);
+        csv_file = NULL;
+    }
+
+    // Free everything.
+    if (header)
+    {
+        for (int i = 0; header[i] != NULL; i++)
+        {
+            free(header[i]);
+        }
+        free(header);
+        header = NULL;
+    }
+    if (current_line)
+    {
+        free(current_line);
+        current_line = NULL;
+    }
+
+    return lines_read;
+}

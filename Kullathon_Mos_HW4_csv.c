@@ -15,13 +15,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sys/types.h>
 
 #include "Kullathon_Mos_HW4_csv.h"
 
 static FILE *csv_file = NULL;
 static char **header = NULL;
 static char *current_line = NULL;
-static size_t current_line_size = 0;
 static int lines_read = -1;
 
 /**
@@ -51,26 +51,25 @@ static char *read_row(void)
     line[0] = '\0';
     char *fragment = NULL;
 
-    size_t length;
-    while (1)
+    size_t n = 0;
+    size_t row_size = 0;
+    ssize_t length;
+    while ((length = getline(&fragment, &n, csv_file)) != -1)
     {
-        if ((length = getline(&fragment, &current_line_size, csv_file)) != -1)
+        row_size += length;
+        line = realloc(line, (row_size + 1) * sizeof(char *));
+        strcat(line, fragment);
+        free(fragment);
+        if (is_valid_row(line))
         {
-            line = realloc(line, (strlen(line) + strlen(fragment) + 1) * sizeof(char *));
-            strcat(line, fragment);
-            free(fragment);
-            if (is_valid_row(line))
-            {
-                return line;
-            }
-        }
-        else
-        {
-            free(line);
-            free(fragment);
-            return NULL;
+            return line;
         }
     }
+
+    fprintf(stderr, "Error reading line from CSV\n");
+    free(line);
+    free(fragment);
+    return NULL;
 }
 
 // Function to parse a CSV line into fields

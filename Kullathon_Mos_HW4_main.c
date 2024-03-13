@@ -45,7 +45,32 @@ typedef struct CallType
 {
     char *call_type;
     int total;
-    Subfield **neighborhoods;
+    Subfield **subfields;
+} CallType;
+
+CallType **call_types = NULL;
+
+/**
+ * Create a call type with the provided name and specified subfields.
+ */
+CallType *init_calltype(char *name, char **subfields)
+{
+    struct CallType *call_type = malloc(sizeof(struct CallType));
+    call_type->subfields = malloc((3 + 1) * sizeof(struct Subfield));
+
+    for (int i = 0; i < 3; i++)
+    {
+        struct Subfield *subfield = malloc(sizeof(struct Subfield));
+        struct ResponseTime *response_time = malloc(sizeof(struct ResponseTime));
+        subfield->name = subfields[i];
+        subfield->responseTime = response_time;
+
+        call_type->name = name;
+        call_type->total = 0;
+        call_type->subfields[i] = subfield;
+    }
+    return call_type;
+}
 
     CallType *next;
 } CallType;

@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#include <memory.h>
 
 #include "Kullathon_Mos_HW4_csv.h"
 
@@ -39,7 +40,7 @@ typedef struct ResponseTime
 typedef struct Subfield
 {
     char *name;
-    ResponseTime *responseTime;
+    ResponseTime **responseTimes;
 } Subfield;
 
 typedef struct CallType
@@ -49,6 +50,7 @@ typedef struct CallType
     Subfield **subfields;
 } CallType;
 
+int calltype_count = 0;
 CallType **call_types = NULL;
 
 /**
@@ -62,9 +64,12 @@ CallType *init_calltype(char *name, char **subfields)
     for (int i = 0; i < 3; i++) // TODO: variable subfields
     {
         struct Subfield *subfield = malloc(sizeof(struct Subfield));
-        struct ResponseTime *response_time = malloc(sizeof(struct ResponseTime));
+        struct ResponseTime *dispatch = malloc(sizeof(struct ResponseTime));
+        struct ResponseTime *on_scene = malloc(sizeof(struct ResponseTime));
         subfield->name = subfields[i];
-        subfield->responseTime = response_time;
+        subfield->responseTimes = malloc(2 * sizeof(struct ResponseTime));
+        subfield->responseTimes[0] = dispatch;
+        subfield->responseTimes[1] = on_scene;
 
         call_type->name = name;
         call_type->total = 0;
@@ -78,20 +83,28 @@ void free_calltype(CallType *call)
     if (!call)
         return;
 
-    if (call->subfields)
+    // Guaranteed to contain all fields through `init_calltype()`
+    for (int i = 0; call->subfields[i]; i++)
     {
-        for (int i = 0; call->subfields[i]; i++)
-        {
-            if (call->subfields[i])
-            {
-                if (call->subfields[i]->responseTime)
-                    free(call->subfields[i]->responseTime);
-            }
-            free(call->subfields[i]);
-        }
-        free(call->subfields);
+        free(call->subfields[i]->responseTimes[0]);
+        free(call->subfields[i]->responseTimes[1]);
+        free(call->subfields[i]->responseTimes);
+        free(call->subfields[i]);
     }
+    free(call->subfields);
     free(call);
+}
+
+CallType *find_calltype(char *name)
+{
+    for (int i = 0; call_types[i]; i++)
+    {
+        if (strcmp(name, call_types[i]->name))
+        {
+            return call_types[i];
+        }
+    }
+    return NULL;
 }
 
 main(int argc, char *argv[])
@@ -115,6 +128,8 @@ main(int argc, char *argv[])
     {
         printf("Subfield %d: %s\n", i, call->subfields[i]->name);
     }
+
+    // CallType *res = find_calltype("TEST_TYPE");
     free_calltype(call);
 
     csvclose();

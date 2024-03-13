@@ -35,17 +35,17 @@ typedef struct ResponseTime
     int over_10_mins;
 } ResponseTime;
 
-typedef struct Neighborhood
+typedef struct Subfield
 {
     char *name;
     ResponseTime responseTime;
-} Neighborhood;
+} Subfield;
 
 typedef struct CallType
 {
     char *call_type;
     int total;
-    Neighborhood **neighborhoods;
+    Subfield **neighborhoods;
 
     CallType *next;
 } CallType;
@@ -74,6 +74,12 @@ main(int argc, char *argv[])
     for (int i = 0; fields[i]; i++)
     {
         printf("Field %d: %s\n", i, fields[i]);
+    }
+
+    char **row;
+    while ((row = csvnext()))
+    {
+        ;
     }
 
     csvclose();

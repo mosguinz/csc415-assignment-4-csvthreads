@@ -72,7 +72,10 @@ static char *read_row(void)
     return NULL;
 }
 
-// Function to parse a CSV line into fields
+/**
+ * Parse a string that is a valid CSV row into a NULL-terminated
+ * array of string representing each columns.
+ */
 static char **parse_csv_line(char *line)
 {
     // Allocate memory for an initial number of fields

@@ -22,7 +22,35 @@
 
 #include "Kullathon_Mos_HW4_csv.h"
 
-int main(int argc, char *argv[])
+typedef struct ResponseTime
+{
+    enum ResponseType
+    {
+        DISPATCH,
+        ON_SCENE
+    } type;
+    int under_2_mins;
+    int mins_3_5;
+    int mins_6_10;
+    int over_10_mins;
+} ResponseTime;
+
+typedef struct Neighborhood
+{
+    char *name;
+    ResponseTime responseTime;
+} Neighborhood;
+
+typedef struct CallType
+{
+    char *call_type;
+    int total;
+    Neighborhood **neighborhoods;
+
+    CallType *next;
+} CallType;
+
+main(int argc, char *argv[])
 {
     //***TO DO***  Look at arguments, initialize application
 

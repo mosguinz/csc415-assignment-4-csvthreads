@@ -38,12 +38,12 @@ typedef struct ResponseTime
 typedef struct Subfield
 {
     char *name;
-    ResponseTime responseTime;
+    ResponseTime *responseTime;
 } Subfield;
 
 typedef struct CallType
 {
-    char *call_type;
+    char *name;
     int total;
     Subfield **subfields;
 } CallType;

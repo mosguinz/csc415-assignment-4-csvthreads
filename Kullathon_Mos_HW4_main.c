@@ -99,7 +99,7 @@ CallType *find_calltype(char *name)
 {
     for (int i = 0; call_types[i]; i++)
     {
-        if (strcmp(name, call_types[i]->name))
+        if (strcmp(name, call_types[i]->name) == 0)
         {
             return call_types[i];
         }

@@ -19,6 +19,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
 
 #include "Kullathon_Mos_HW4_csv.h"
 
@@ -58,7 +59,7 @@ CallType *init_calltype(char *name, char **subfields)
     struct CallType *call_type = malloc(sizeof(struct CallType));
     call_type->subfields = malloc((3 + 1) * sizeof(struct Subfield));
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++) // TODO: variable subfields
     {
         struct Subfield *subfield = malloc(sizeof(struct Subfield));
         struct ResponseTime *response_time = malloc(sizeof(struct ResponseTime));
@@ -72,8 +73,26 @@ CallType *init_calltype(char *name, char **subfields)
     return call_type;
 }
 
-    CallType *next;
-} CallType;
+void free_calltype(CallType *call)
+{
+    if (!call)
+        return;
+
+    if (call->subfields)
+    {
+        for (int i = 0; call->subfields[i]; i++)
+        {
+            if (call->subfields[i])
+            {
+                if (call->subfields[i]->responseTime)
+                    free(call->subfields[i]->responseTime);
+            }
+            free(call->subfields[i]);
+        }
+        free(call->subfields);
+    }
+    free(call);
+}
 
 main(int argc, char *argv[])
 {
@@ -90,22 +109,13 @@ main(int argc, char *argv[])
     char *subfield_type = argv[3];
     char **subfields = &argv[4];
 
-    for (int i = 0; subfields[i]; i++)
+    CallType *call = init_calltype("TEST_TYPE", subfields);
+    printf("Name: %s\n", call->name);
+    for (int i = 0; call->subfields[i]; i++)
     {
-        printf("Subfield %d: %s\n", i, subfields[i]);
+        printf("Subfield %d: %s\n", i, call->subfields[i]->name);
     }
-
-    char **fields = csvopen(filename);
-    for (int i = 0; fields[i]; i++)
-    {
-        printf("Field %d: %s\n", i, fields[i]);
-    }
-
-    char **row;
-    while ((row = csvnext()))
-    {
-        ;
-    }
+    free_calltype(call);
 
     csvclose();
 

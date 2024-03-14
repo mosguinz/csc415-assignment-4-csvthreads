@@ -59,22 +59,29 @@ CallType **call_types = NULL;
 CallType *init_calltype(char *name, char **subfields)
 {
     struct CallType *call_type = malloc(sizeof(struct CallType));
-    call_type->subfields = malloc((3 + 1) * sizeof(struct Subfield));
+    call_type->subfields = NULL;
 
-    for (int i = 0; i < 3; i++) // TODO: variable subfields
+    int i = 0;
+    while (subfields[i])
     {
         struct Subfield *subfield = malloc(sizeof(struct Subfield));
         struct ResponseTime *dispatch = malloc(sizeof(struct ResponseTime));
         struct ResponseTime *on_scene = malloc(sizeof(struct ResponseTime));
+        dispatch->type = DISPATCH;
+        on_scene->type = ON_SCENE;
+
         subfield->name = subfields[i];
         subfield->responseTimes = malloc(2 * sizeof(struct ResponseTime));
         subfield->responseTimes[0] = dispatch;
         subfield->responseTimes[1] = on_scene;
 
+        call_type->subfields = realloc(call_type->subfields, (i + 1) * sizeof(struct Subfield));
         call_type->name = name;
         call_type->total = 0;
         call_type->subfields[i] = subfield;
+        i++;
     }
+    call_type->subfields[i] = NULL;
     return call_type;
 }
 

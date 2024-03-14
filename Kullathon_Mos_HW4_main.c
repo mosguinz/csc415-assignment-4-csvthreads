@@ -114,6 +114,17 @@ CallType *find_calltype(char *name)
     return NULL;
 }
 
+/** Get the index of the specified field name */
+int get_field_index(char *value)
+{
+    for (int i = 0; header[i]; i++)
+    {
+        if (strcmp(value, header[i]) == 0)
+            return i;
+    }
+    return -1;
+}
+
 main(int argc, char *argv[])
 {
     //***TO DO***  Look at arguments, initialize application

@@ -125,6 +125,25 @@ int get_field_index(char *value)
     return -1;
 }
 
+/**
+ * Parse the provided timestamp into `time_t`. Only handles two format
+ * as provided in the CSV files.
+ */
+time_t parse_timestamp(char *ts)
+{
+    struct tm time;
+    if (strptime(ts, "%D %R", &time)) // 7/27/20 12:00
+    {
+        return mktime(&time);
+    }
+    else if (strptime(ts, "%m/%d/%Y %r", &time)) // 01/06/2016 08:46:50 PM
+    {
+        return mktime(&time);
+    }
+    fprintf(stderr, "Could not parse the timestamp: %s\n", ts);
+    return -1;
+}
+
 main(int argc, char *argv[])
 {
     //***TO DO***  Look at arguments, initialize application

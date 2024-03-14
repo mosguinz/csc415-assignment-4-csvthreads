@@ -42,7 +42,7 @@ typedef struct ResponseTime
 typedef struct Subfield
 {
     char *name;
-    ResponseTime **responseTimes;
+    ResponseTime *responseTimes[2];
 } Subfield;
 
 typedef struct CallType
@@ -73,9 +73,8 @@ CallType *init_calltype(char *name, char **subfields)
         on_scene->type = ON_SCENE;
 
         subfield->name = subfields[i];
-        subfield->responseTimes = malloc(2 * sizeof(struct ResponseTime));
-        subfield->responseTimes[0] = dispatch;
-        subfield->responseTimes[1] = on_scene;
+        subfield->responseTimes[DISPATCH] = dispatch;
+        subfield->responseTimes[ON_SCENE] = on_scene;
 
         call_type->subfields = realloc(call_type->subfields, (i + 1) * sizeof(struct Subfield));
         call_type->name = name;
@@ -95,9 +94,8 @@ void free_calltype(CallType *call)
     // Guaranteed to contain all fields through `init_calltype()`
     for (int i = 0; call->subfields[i]; i++)
     {
-        free(call->subfields[i]->responseTimes[0]);
-        free(call->subfields[i]->responseTimes[1]);
-        free(call->subfields[i]->responseTimes);
+        free(call->subfields[i]->responseTimes[DISPATCH]);
+        free(call->subfields[i]->responseTimes[ON_SCENE]);
         free(call->subfields[i]);
     }
     free(call->subfields);

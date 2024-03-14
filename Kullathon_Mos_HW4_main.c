@@ -114,6 +114,26 @@ CallType *find_calltype(char *name)
     return NULL;
 }
 
+void update_calltype(CallType *call, char *subfield, ResponseType type, double time_delta)
+{
+    call->total++;
+    for (int i = 0; call->subfields[i]; i++)
+    {
+        if (strcmp(call->subfields[i]->name, subfield) == 0)
+        {
+            ResponseTime *resp_time = call->subfields[i]->responseTimes[type];
+            if (time_delta <= 120)
+                resp_time->under_2_mins++;
+            else if (time_delta > 120 && time_delta <= 300)
+                resp_time->mins_3_5++;
+            else if (time_delta > 300 && time_delta <= 600)
+                resp_time->mins_6_10++;
+            else
+                resp_time->over_10_mins++;
+        }
+    }
+}
+
 /** Get the index of the specified field name */
 int get_field_index(char *value)
 {

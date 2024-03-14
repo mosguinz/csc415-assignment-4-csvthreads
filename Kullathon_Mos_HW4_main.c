@@ -24,13 +24,15 @@
 
 #include "Kullathon_Mos_HW4_csv.h"
 
+typedef enum ResponseType
+{
+    DISPATCH,
+    ON_SCENE
+} ResponseType;
+
 typedef struct ResponseTime
 {
-    enum ResponseType
-    {
-        DISPATCH,
-        ON_SCENE
-    } type;
+    ResponseType type;
     int under_2_mins;
     int mins_3_5;
     int mins_6_10;

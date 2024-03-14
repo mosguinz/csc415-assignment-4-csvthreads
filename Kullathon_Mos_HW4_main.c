@@ -131,9 +131,10 @@ int get_field_index(char *value)
  */
 time_t parse_timestamp(char *ts)
 {
-    struct tm time;
-    if (strptime(ts, "%D %R", &time)) // 7/27/20 12:00
+    struct tm time = {0};
+    if (strptime(ts, "%m/%d/%y %H:%M", &time)) // 7/27/20 12:00
     {
+        time.tm_sec = 0;
         return mktime(&time);
     }
     else if (strptime(ts, "%m/%d/%Y %r", &time)) // 01/06/2016 08:46:50 PM

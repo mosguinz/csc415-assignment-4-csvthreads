@@ -66,7 +66,6 @@ static char *read_row(void)
         }
     }
 
-    fprintf(stderr, "Error reading line from CSV\n");
     free(line);
     free(fragment);
     return NULL;
@@ -159,6 +158,7 @@ char **csvopen(char *filename)
     current_line = read_row();
     if (!current_line)
     {
+        fprintf(stderr, "Error reading line from CSV\n");
         fclose(csv_file);
         return NULL;
     }

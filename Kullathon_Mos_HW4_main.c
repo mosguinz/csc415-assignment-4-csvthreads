@@ -72,13 +72,11 @@ CallType *init_calltype(char *name, char **subfields)
         dispatch->type = DISPATCH;
         on_scene->type = ON_SCENE;
 
-        subfield->name = subfields[i];
+        subfield->name = strdup(subfields[i]);
         subfield->responseTimes[DISPATCH] = dispatch;
         subfield->responseTimes[ON_SCENE] = on_scene;
 
         call_type->subfields = realloc(call_type->subfields, (i + 1) * sizeof(struct Subfield));
-        call_type->name = name;
-        call_type->total = 0;
         call_type->subfields[i] = subfield;
         i++;
     }
@@ -96,14 +94,18 @@ void free_calltype(CallType *call)
     {
         free(call->subfields[i]->responseTimes[DISPATCH]);
         free(call->subfields[i]->responseTimes[ON_SCENE]);
+        free(call->subfields[i]->name);
         free(call->subfields[i]);
     }
+    free(call->name);
     free(call->subfields);
     free(call);
 }
 
 CallType *find_calltype(char *name)
 {
+    if (!call_types)
+        return NULL;
     for (int i = 0; call_types[i]; i++)
     {
         if (strcmp(name, call_types[i]->name) == 0)

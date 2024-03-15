@@ -185,10 +185,80 @@ main(int argc, char *argv[])
     char *subfield_type = argv[3];
     char **subfields = &argv[4];
 
-    CallType *call = init_calltype("TEST_TYPE", subfields);
-    printf("Name: %s\n", call->name);
-    for (int i = 0; call->subfields[i]; i++)
+    header = csvopen(filename);
+
+    // Field indicies
+    int call_type_final_desc = get_field_index("call_type_final_desc");
+    int call_type_original_desc = get_field_index("call_type_original_desc");
+    int analysis_neighborhood = get_field_index("analysis_neighborhood");
+    int police_district = get_field_index("police_district");
+    int received_datetime = get_field_index("received_datetime");
+    int dispatch_datetime = get_field_index("dispatch_datetime");
+    int enroute_datetime = get_field_index("enroute_datetime");
+    int onscene_datetime = get_field_index("onscene_datetime");
+
+    int subfield_col = strcmp(subfield_type, "police_district")
+                           ? analysis_neighborhood
+                           : police_district;
+
+    printf("%d %d %d %d %d %d %d %d\n", call_type_final_desc,
+           call_type_original_desc,
+           analysis_neighborhood,
+           police_district,
+           received_datetime,
+           dispatch_datetime,
+           enroute_datetime,
+           onscene_datetime);
+
+    char **row;
+    int i = 1; // for debug
+    while (row = csvnext())
     {
+        i++;
+        char *call_type = row[call_type_final_desc][0]
+                              ? row[call_type_final_desc]
+                              : row[call_type_original_desc];
+        char *subfield = row[subfield_col];
+        char *received_ts = row[received_datetime];
+        char *dispatch_ts = row[dispatch_datetime];
+        char *enroute_ts = row[enroute_datetime];
+        char *onscene_ts = row[onscene_datetime];
+
+        if (!call_type[0] ||
+            !received_ts[0] ||
+            !dispatch_ts[0] ||
+            !enroute_ts[0] ||
+            !onscene_ts[0])
+        {
+            continue;
+        }
+
+        // Parse time
+
+        double dispatch_delta = difftime(parse_timestamp(dispatch_ts), parse_timestamp(received_ts));
+        double onscene_delta = difftime(parse_timestamp(onscene_ts), parse_timestamp(enroute_ts));
+
+        CallType *call = find_calltype(call_type);
+        if (!call)
+        {
+            call = init_calltype(call_type, subfields);
+            call_types = realloc(call_types, (calltype_count + 1) * sizeof(struct CallType *));
+            call_types[calltype_count] = call;
+            calltype_count++;
+        }
+        update_calltype(call, subfield, DISPATCH, dispatch_delta);
+        update_calltype(call, subfield, ON_SCENE, onscene_delta);
+
+        printf("Row %d | Call count: %d\n", i, calltype_count);
+        printf("Type: %s | Dispatch: %s\n", call_type, dispatch_ts);
+
+        for (int i = 0; row[i]; i++)
+        {
+            free(row[i]);
+        }
+        free(row);
+        if (i > 56)
+        {
         printf("Subfield %d: %s\n", i, call->subfields[i]->name);
     }
 

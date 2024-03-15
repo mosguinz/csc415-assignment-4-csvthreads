@@ -109,7 +109,7 @@ CallType *find_calltype(char *name)
 {
     if (!call_types)
         return NULL;
-    for (int i = 0; call_types[i]; i++)
+    for (int i = 0; i < calltype_count; i++)
     {
         if (strcmp(name, call_types[i]->name) == 0)
         {
@@ -238,6 +238,7 @@ main(int argc, char *argv[])
             !enroute_ts[0] ||
             !onscene_ts[0])
         {
+            free_row(row);
             continue;
         }
 
@@ -259,19 +260,20 @@ main(int argc, char *argv[])
 
         printf("Row %d | Call count: %d\n", i, calltype_count);
         printf("Type: %s | Dispatch: %s\n", call_type, dispatch_ts);
+        free_row(row);
+    }
+    call_types = realloc(call_types, (calltype_count + 1) * sizeof(struct CallType *));
+    call_types[calltype_count] = NULL;
+    printf("Setting call_types[%d] as NULL\n", calltype_count);
 
-        for (int i = 0; row[i]; i++)
-        {
-            free(row[i]);
-        }
-        free(row);
-        if (i > 56)
-        {
-        printf("Subfield %d: %s\n", i, call->subfields[i]->name);
+    for (int i = 0; i < calltype_count; i++)
+    {
+        CallType *call = call_types[i];
+        printf("Freeing (%i): %s\n", i, call->name);
+        free_calltype(call);
     }
 
-    // CallType *res = find_calltype("TEST_TYPE");
-    free_calltype(call);
+    free(call_types);
 
     csvclose();
 

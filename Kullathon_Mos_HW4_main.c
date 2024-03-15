@@ -150,6 +150,14 @@ int get_field_index(char *value)
     return -1;
 }
 
+/** Helper to free rows read from CSV. */
+void free_row(char **row)
+{
+    for (int i = 0; row[i]; i++)
+        free(row[i]);
+    free(row);
+}
+
 /**
  * Parse the provided timestamp into `time_t`. Only handles two format
  * as provided in the CSV files.

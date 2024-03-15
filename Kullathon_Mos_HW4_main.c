@@ -54,6 +54,7 @@ typedef struct CallType
 
 int calltype_count = 0;
 CallType **call_types = NULL;
+char **header = NULL;
 
 /**
  * Create a call type with the provided name and specified subfields.
@@ -61,6 +62,8 @@ CallType **call_types = NULL;
 CallType *init_calltype(char *name, char **subfields)
 {
     struct CallType *call_type = malloc(sizeof(struct CallType));
+    call_type->name = strdup(name);
+    call_type->total = 0;
     call_type->subfields = NULL;
 
     int i = 0;

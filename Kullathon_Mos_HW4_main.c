@@ -56,6 +56,17 @@ int calltype_count = 0;
 CallType **call_types = NULL;
 char **header = NULL;
 
+ResponseTime *init_response_time(ResponseType type)
+{
+    struct ResponseTime *rt = malloc(sizeof(struct ResponseTime));
+    rt->type = type;
+    rt->under_2_mins = 0;
+    rt->mins_3_5 = 0;
+    rt->mins_6_10 = 0;
+    rt->over_10_mins = 0;
+    return rt;
+}
+
 /**
  * Create a call type with the provided name and specified subfields.
  */
@@ -70,10 +81,8 @@ CallType *init_calltype(char *name, char **subfields)
     while (subfields[i])
     {
         struct Subfield *subfield = malloc(sizeof(struct Subfield));
-        struct ResponseTime *dispatch = malloc(sizeof(struct ResponseTime));
-        struct ResponseTime *on_scene = malloc(sizeof(struct ResponseTime));
-        dispatch->type = DISPATCH;
-        on_scene->type = ON_SCENE;
+        struct ResponseTime *dispatch = init_response_time(DISPATCH);
+        struct ResponseTime *on_scene = init_response_time(ON_SCENE);
 
         subfield->name = strdup(subfields[i]);
         subfield->responseTimes[DISPATCH] = dispatch;

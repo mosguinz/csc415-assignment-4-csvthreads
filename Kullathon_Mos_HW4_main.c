@@ -158,6 +158,16 @@ void free_row(char **row)
     free(row);
 }
 
+void display_calltypes()
+{
+    for (int i = 0; i < calltype_count; i++)
+    {
+        CallType* call = call_types[i];
+        printf("%s | %d\n", call->name, call->total);
+    }
+    
+}
+
 /**
  * Parse the provided timestamp into `time_t`. Only handles two format
  * as provided in the CSV files.
@@ -232,20 +242,18 @@ main(int argc, char *argv[])
         char *enroute_ts = row[enroute_datetime];
         char *onscene_ts = row[onscene_datetime];
 
-        if (!call_type[0] ||
-            !received_ts[0] ||
-            !dispatch_ts[0] ||
-            !enroute_ts[0] ||
-            !onscene_ts[0])
+        if (!call_type[0] || !received_ts[0] || !dispatch_ts[0] ||
+            !enroute_ts[0] || !onscene_ts[0])
         {
             free_row(row);
             continue;
         }
 
         // Parse time
-
-        double dispatch_delta = difftime(parse_timestamp(dispatch_ts), parse_timestamp(received_ts));
-        double onscene_delta = difftime(parse_timestamp(onscene_ts), parse_timestamp(enroute_ts));
+        double dispatch_delta = difftime(parse_timestamp(dispatch_ts),
+                                         parse_timestamp(received_ts));
+        double onscene_delta = difftime(parse_timestamp(onscene_ts),
+                                        parse_timestamp(enroute_ts));
 
         CallType *call = find_calltype(call_type);
         if (!call)
@@ -258,13 +266,18 @@ main(int argc, char *argv[])
         update_calltype(call, subfield, DISPATCH, dispatch_delta);
         update_calltype(call, subfield, ON_SCENE, onscene_delta);
 
-        printf("Row %d | Call count: %d\n", i, calltype_count);
-        printf("Type: %s | Dispatch: %s\n", call_type, dispatch_ts);
         free_row(row);
+
+        if (i > 500)
+        {
+            break;
+        }
     }
     call_types = realloc(call_types, (calltype_count + 1) * sizeof(struct CallType *));
     call_types[calltype_count] = NULL;
     printf("Setting call_types[%d] as NULL\n", calltype_count);
+
+    display_calltypes();
 
     for (int i = 0; i < calltype_count; i++)
     {

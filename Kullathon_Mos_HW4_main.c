@@ -243,7 +243,7 @@ main(int argc, char *argv[])
         char *onscene_ts = row[onscene_datetime];
 
         if (!call_type[0] || !received_ts[0] || !dispatch_ts[0] ||
-            !enroute_ts[0] || !onscene_ts[0])
+            !enroute_ts[0] || !onscene_ts[0] || !subfield[0])
         {
             free_row(row);
             continue;

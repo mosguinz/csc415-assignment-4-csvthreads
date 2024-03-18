@@ -149,12 +149,66 @@ void free_row(char **row)
 
 void display_calltypes()
 {
+    // Special "subfield" to hold the total.
+    Subfield *total = malloc(sizeof(Subfield));
+    total->name = strdup("Total");
+    total->responseTimes[DISPATCH] = init_response_time(DISPATCH);
+    total->responseTimes[ON_SCENE] = init_response_time(ON_SCENE);
+
+    // Calculate field sizes, etc.
     for (int i = 0; i < calltype_count; i++)
     {
-        CallType* call = call_types[i];
-        printf("%s | %d\n", call->name, call->total);
+        CallType *call = call_types[i];
+        // printf("%s | %d | ", call->name, call->total);
+        for (int j = 0; call->subfields[j]; j++)
+        {
+            ResponseTime *dispatch = call->subfields[j]->responseTimes[DISPATCH];
+            ResponseTime *on_scene = call->subfields[j]->responseTimes[ON_SCENE];
+            dispatch->under_2_mins += dispatch->under_2_mins;
+            on_scene->under_2_mins += dispatch->under_2_mins;
+            dispatch->mins_6_10 += dispatch->mins_6_10;
+            on_scene->mins_6_10 += dispatch->mins_6_10;
+            dispatch->mins_3_5 += dispatch->mins_3_5;
+            on_scene->mins_3_5 += dispatch->mins_3_5;
+            dispatch->over_10_mins += dispatch->over_10_mins;
+            on_scene->over_10_mins += dispatch->over_10_mins;
+            // printf("%20s | %5d | %5d | %5d | %5d\n", call->subfields[j]->name,
+            //        dispatch->under_2_mins,
+            //        dispatch->mins_3_5,
+            //        dispatch->mins_6_10,
+            //        dispatch->over_10_mins);
+        }
     }
-    
+
+    // TODO: Print headers
+
+    // Print each rows.
+    for (int i = 0; i < calltype_count; i++)
+    {
+        // Print call type and total.
+        CallType *call = call_types[i];
+        printf("%-25s | %5d | ", call->name, call->total);
+
+        // Print count for each subfields.
+        for (int j = 0; call->subfields[j]; j++)
+        {
+            Subfield *subfield = call->subfields[j];
+            ResponseTime *dispatch = subfield->responseTimes[DISPATCH];
+            ResponseTime *on_scene = subfield->responseTimes[ON_SCENE];
+            printf("%5d | %5d | %5d | %5d | %5d | %5d | %5d | %5d |",
+                   dispatch->under_2_mins,
+                   dispatch->mins_3_5,
+                   dispatch->mins_6_10,
+                   dispatch->over_10_mins,
+                   on_scene->under_2_mins,
+                   on_scene->mins_3_5,
+                   on_scene->mins_6_10,
+                   on_scene->over_10_mins);
+        }
+        printf("\n");
+    }
+
+    free_subfield(total);
 }
 
 /**
@@ -179,6 +233,16 @@ time_t parse_timestamp(char *ts)
 
 main(int argc, char *argv[])
 {
+
+    //**************************************************************
+    // DO NOT CHANGE THIS BLOCK
+    // Time stamp start
+    struct timespec startTime;
+    struct timespec endTime;
+
+    clock_gettime(CLOCK_REALTIME, &startTime);
+    //**************************************************************
+
     //***TO DO***  Look at arguments, initialize application
 
     if (argc < 5)
@@ -257,11 +321,12 @@ main(int argc, char *argv[])
 
         free_row(row);
 
-        if (i > 500)
-        {
-            break;
-        }
+        // if (i > 500)
+        // {
+        //     break;
+        // }
     }
+
     call_types = realloc(call_types, (calltype_count + 1) * sizeof(struct CallType *));
     call_types[calltype_count] = NULL;
     printf("Setting call_types[%d] as NULL\n", calltype_count);
@@ -271,22 +336,13 @@ main(int argc, char *argv[])
     for (int i = 0; i < calltype_count; i++)
     {
         CallType *call = call_types[i];
-        printf("Freeing (%i): %s\n", i, call->name);
+        // printf("Freeing (%i): %s\n", i, call->name);
         free_calltype(call);
     }
 
     free(call_types);
 
     csvclose();
-
-    //**************************************************************
-    // DO NOT CHANGE THIS BLOCK
-    // Time stamp start
-    struct timespec startTime;
-    struct timespec endTime;
-
-    clock_gettime(CLOCK_REALTIME, &startTime);
-    //**************************************************************
 
     // *** TO DO ***  start your thread processing
     //                wait for the threads to finish

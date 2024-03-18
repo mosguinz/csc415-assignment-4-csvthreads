@@ -69,6 +69,16 @@ CallType *init_calltype(char *name, char **subfields)
     return call_type;
 }
 
+void free_subfield(Subfield *subfield)
+{
+    if (!subfield)
+        return;
+    free(subfield->responseTimes[DISPATCH]);
+    free(subfield->responseTimes[ON_SCENE]);
+    free(subfield->name);
+    free(subfield);
+}
+
 void free_calltype(CallType *call)
 {
     if (!call)
@@ -77,10 +87,7 @@ void free_calltype(CallType *call)
     // Guaranteed to contain all fields through `init_calltype()`
     for (int i = 0; call->subfields[i]; i++)
     {
-        free(call->subfields[i]->responseTimes[DISPATCH]);
-        free(call->subfields[i]->responseTimes[ON_SCENE]);
-        free(call->subfields[i]->name);
-        free(call->subfields[i]);
+        free_subfield(call->subfields[i]);
     }
     free(call->name);
     free(call->subfields);

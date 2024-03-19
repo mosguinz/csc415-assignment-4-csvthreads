@@ -155,13 +155,22 @@ void display_calltypes()
     total->responseTimes[DISPATCH] = init_response_time(DISPATCH);
     total->responseTimes[ON_SCENE] = init_response_time(ON_SCENE);
 
+    // Keep track of field sizes to pad columns.
+    int max_name_len = 25;
+    int max_digits = 0;
+    int max_col_value = 0;
+
     // Calculate field sizes, etc.
     for (int i = 0; i < calltype_count; i++)
     {
         CallType *call = call_types[i];
-        // printf("%s | %d | ", call->name, call->total);
+        max_col_value = call->total > max_col_value ? call->total : max_col_value;
+
         for (int j = 0; call->subfields[j]; j++)
         {
+            size_t name_len = strlen(call->name);
+            max_name_len = name_len > max_name_len ? name_len : max_name_len;
+
             ResponseTime *dispatch = call->subfields[j]->responseTimes[DISPATCH];
             ResponseTime *on_scene = call->subfields[j]->responseTimes[ON_SCENE];
             dispatch->under_2_mins += dispatch->under_2_mins;
@@ -172,13 +181,16 @@ void display_calltypes()
             on_scene->mins_3_5 += dispatch->mins_3_5;
             dispatch->over_10_mins += dispatch->over_10_mins;
             on_scene->over_10_mins += dispatch->over_10_mins;
-            // printf("%20s | %5d | %5d | %5d | %5d\n", call->subfields[j]->name,
-            //        dispatch->under_2_mins,
-            //        dispatch->mins_3_5,
-            //        dispatch->mins_6_10,
-            //        dispatch->over_10_mins);
         }
     }
+
+    // Find max number of digits in the total column.
+    while (max_col_value != 0)
+    {
+        max_col_value /= 10;
+        max_digits++;
+    }
+    max_digits = max_digits > 5 ? max_digits : 5;
 
     // TODO: Print headers
 
@@ -187,7 +199,7 @@ void display_calltypes()
     {
         // Print call type and total.
         CallType *call = call_types[i];
-        printf("%-25s | %5d | ", call->name, call->total);
+        printf("%-*s | %*d | ", max_name_len, call->name, max_digits, call->total);
 
         // Print count for each subfields.
         for (int j = 0; call->subfields[j]; j++)
@@ -195,19 +207,27 @@ void display_calltypes()
             Subfield *subfield = call->subfields[j];
             ResponseTime *dispatch = subfield->responseTimes[DISPATCH];
             ResponseTime *on_scene = subfield->responseTimes[ON_SCENE];
-            printf("%5d | %5d | %5d | %5d | %5d | %5d | %5d | %5d |",
+            printf("%*d | %*d | %*d | %*d | %*d | %*d | %*d | %*d | ",
+                   max_digits,
                    dispatch->under_2_mins,
+                   max_digits,
                    dispatch->mins_3_5,
+                   max_digits,
                    dispatch->mins_6_10,
+                   max_digits,
                    dispatch->over_10_mins,
+                   max_digits,
                    on_scene->under_2_mins,
+                   max_digits,
                    on_scene->mins_3_5,
+                   max_digits,
                    on_scene->mins_6_10,
+                   max_digits,
                    on_scene->over_10_mins);
         }
         printf("\n");
     }
-
+    printf("max digits %d\n", max_digits);
     free_subfield(total);
 }
 
@@ -320,11 +340,6 @@ main(int argc, char *argv[])
         update_calltype(call, subfield, ON_SCENE, onscene_delta);
 
         free_row(row);
-
-        // if (i > 500)
-        // {
-        //     break;
-        // }
     }
 
     call_types = realloc(call_types, (calltype_count + 1) * sizeof(struct CallType *));

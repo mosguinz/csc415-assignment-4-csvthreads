@@ -166,6 +166,24 @@ void print_header_field(char *text, int width)
     printf("%*s%s%*s|", l_pad, "", text, r_pad, "");
 }
 
+/** An implementation of insertion sort to sort the calls. */
+void sort_calls()
+{
+    int i, j;
+    CallType *call;
+    for (i = 1; i < calltype_count; i++)
+    {
+        call = call_types[i];
+        j = i - 1;
+        while (j >= 0 && strcmp(call_types[j]->name, call->name) > 0)
+        {
+            call_types[j + 1] = call_types[j];
+            j = j - 1;
+        }
+        call_types[j + 1] = call;
+    }
+}
+
 void display_calltypes()
 {
     // Keep track of field sizes to pad columns.
@@ -230,6 +248,7 @@ void display_calltypes()
     }
     printf("\n");
 
+    sort_calls();
     // Print each rows.
     for (int i = 0; i < calltype_count; i++)
     {

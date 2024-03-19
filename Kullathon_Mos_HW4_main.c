@@ -301,7 +301,6 @@ void display_calltypes()
         }
         printf("\n");
     }
-    printf("max digits %d\n", max_digits);
 }
 
 /**

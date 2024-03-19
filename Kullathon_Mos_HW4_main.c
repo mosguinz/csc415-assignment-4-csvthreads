@@ -241,7 +241,7 @@ void display_calltypes()
     int number_width = max_digits + 2;
     printf("%-*s |", max_name_len, "Call Type");
     print_header_field("Total", max_digits + 2);
-    for (int i = 0; i< (subfield_count * 2) + 2; i++)
+    for (int i = 0; i < (subfield_count * 2) + 2; i++)
     {
         print_header_field("<2", number_width);
         print_header_field("3-5", number_width);
@@ -339,15 +339,6 @@ void *process(void *args)
                            ? analysis_neighborhood
                            : police_district;
 
-    printf("%d %d %d %d %d %d %d %d\n", call_type_final_desc,
-           call_type_original_desc,
-           analysis_neighborhood,
-           police_district,
-           received_datetime,
-           dispatch_datetime,
-           enroute_datetime,
-           onscene_datetime);
-
     char **row;
     while (row = csvnext())
     {
@@ -393,7 +384,7 @@ void *process(void *args)
     printf("Setting call_types[%d] as NULL\n", calltype_count);
 }
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     //**************************************************************
     // DO NOT CHANGE THIS BLOCK

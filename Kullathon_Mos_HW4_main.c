@@ -40,33 +40,38 @@ ResponseTime *init_response_time(ResponseType type)
     return rt;
 }
 
+Subfield *init_subfield(char *name)
+{
+    struct Subfield *subfield = malloc(sizeof(struct Subfield));
+    struct ResponseTime *dispatch = init_response_time(DISPATCH);
+    struct ResponseTime *on_scene = init_response_time(ON_SCENE);
+
+    subfield->name = strdup(name);
+    subfield->responseTimes[DISPATCH] = dispatch;
+    subfield->responseTimes[ON_SCENE] = on_scene;
+    return subfield;
+}
+
 /**
  * Create a call type with the provided name and specified subfields.
  */
 CallType *init_calltype(char *name, char **subfields)
 {
-    struct CallType *call_type = malloc(sizeof(struct CallType));
-    call_type->name = strdup(name);
-    call_type->total = 0;
-    call_type->subfields = NULL;
+    struct CallType *call = malloc(sizeof(struct CallType));
+    call->name = strdup(name);
+    call->total_count = 0;
+    call->subfields = NULL;
+    call->call_total = init_subfield("Total");
 
     int i = 0;
     while (subfields[i])
     {
-        struct Subfield *subfield = malloc(sizeof(struct Subfield));
-        struct ResponseTime *dispatch = init_response_time(DISPATCH);
-        struct ResponseTime *on_scene = init_response_time(ON_SCENE);
-
-        subfield->name = strdup(subfields[i]);
-        subfield->responseTimes[DISPATCH] = dispatch;
-        subfield->responseTimes[ON_SCENE] = on_scene;
-
-        call_type->subfields = realloc(call_type->subfields, (i + 1) * sizeof(struct Subfield));
-        call_type->subfields[i] = subfield;
+        call->subfields = realloc(call->subfields, (i + 1) * sizeof(struct Subfield));
+        call->subfields[i] = init_subfield(subfields[i]);
         i++;
     }
-    call_type->subfields[i] = NULL;
-    return call_type;
+    call->subfields[i] = NULL;
+    return call;
 }
 
 void free_subfield(Subfield *subfield)
@@ -89,6 +94,7 @@ void free_calltype(CallType *call)
     {
         free_subfield(call->subfields[i]);
     }
+    free_subfield(call->call_total);
     free(call->name);
     free(call->subfields);
     free(call);
@@ -108,7 +114,7 @@ CallType *find_calltype(char *name)
     return NULL;
 }
 
-void update_calltype(CallType *call, char *subfield, ResponseType type, double time_delta)
+void update_response_time(ResponseTime *resp_time, double time_delta)
 {
     call->total++;
     for (int i = 0; call->subfields[i]; i++)
@@ -116,14 +122,27 @@ void update_calltype(CallType *call, char *subfield, ResponseType type, double t
         if (strcmp(call->subfields[i]->name, subfield) == 0)
         {
             ResponseTime *resp_time = call->subfields[i]->responseTimes[type];
-            if (time_delta <= 120)
-                resp_time->under_2_mins++;
-            else if (time_delta > 120 && time_delta <= 300)
-                resp_time->mins_3_5++;
-            else if (time_delta > 300 && time_delta <= 600)
-                resp_time->mins_6_10++;
-            else
-                resp_time->over_10_mins++;
+    if (time_delta <= 120)
+        resp_time->under_2_mins++;
+    else if (time_delta > 120 && time_delta <= 300)
+        resp_time->mins_3_5++;
+    else if (time_delta > 300 && time_delta <= 600)
+        resp_time->mins_6_10++;
+    else
+        resp_time->over_10_mins++;
+}
+
+void update_calltype(CallType *call, char *subfield, ResponseType type, double time_delta)
+{
+    call->total_count++;
+    update_response_time(call->call_total->responseTimes[type], time_delta);
+
+    for (int i = 0; call->subfields[i]; i++)
+    {
+        if (strcmp(call->subfields[i]->name, subfield) == 0)
+        {
+            ResponseTime *resp_time = call->subfields[i]->responseTimes[type];
+            update_response_time(resp_time, time_delta);
         }
     }
 }

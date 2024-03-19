@@ -22,6 +22,7 @@ typedef struct Subfield
 typedef struct CallType
 {
     char *name;
-    int total;
+    int total_count;
+    Subfield *call_total;
     Subfield **subfields;
 } CallType;

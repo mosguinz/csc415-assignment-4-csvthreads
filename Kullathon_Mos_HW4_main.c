@@ -193,6 +193,40 @@ void display_calltypes()
     max_digits = max_digits > 5 ? max_digits : 5;
 
     // TODO: Print headers
+    int subfield_width = (max_digits + 2) * 4 + 3;
+    Subfield **subfields = call_types[0]->subfields;
+
+    // Subfield names
+    printf("%*s|", max_name_len + max_digits + 4, "");
+    for (int i = -1; subfields[i]; i++)
+    {
+        char *name = i == -1 ? "Total" : subfields[i]->name;
+        print_header_field(name, subfield_width);
+        print_header_field(name, subfield_width);
+    }
+    printf("\n");
+
+    // Dispatch times
+    printf("%*s|", max_name_len + max_digits + 4, "");
+    for (int i = -1; subfields[i]; i++)
+    {
+        print_header_field("Dispatch Time", subfield_width);
+        print_header_field("On Scene Time", subfield_width);
+    }
+    printf("\n");
+
+    // Time buckets
+    int number_width = max_digits + 2;
+    printf("%-*s |", max_name_len, "Call Type");
+    print_header_field("Total", max_digits + 2);
+    for (int i = -1; subfields[i]; i++)
+    {
+        print_header_field("<2", number_width);
+        print_header_field("3-5", number_width);
+        print_header_field("6-10", number_width);
+        print_header_field(">10", number_width);
+    }
+    printf("\n");
 
     // Print each rows.
     for (int i = 0; i < calltype_count; i++)

@@ -134,7 +134,6 @@ void update_response_time(ResponseTime *resp_time, double time_delta)
 
 void update_calltype(CallType *call, char *subfield, ResponseType type, double time_delta)
 {
-    call->total_count++;
     update_response_time(call->call_total->responseTimes[type], time_delta);
 
     for (int i = 0; call->subfields[i]; i++)
@@ -389,6 +388,7 @@ main(int argc, char *argv[])
             call_types[calltype_count] = call;
             calltype_count++;
         }
+        call->total_count++;
         update_calltype(call, subfield, DISPATCH, dispatch_delta);
         update_calltype(call, subfield, ON_SCENE, onscene_delta);
 

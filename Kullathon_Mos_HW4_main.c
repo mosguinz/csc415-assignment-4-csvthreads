@@ -310,7 +310,6 @@ time_t parse_timestamp(char *ts)
 
 main(int argc, char *argv[])
 {
-
     //**************************************************************
     // DO NOT CHANGE THIS BLOCK
     // Time stamp start
@@ -334,6 +333,9 @@ main(int argc, char *argv[])
     char **subfields = &argv[4];
 
     header = csvopen(filename);
+
+    // *** TO DO ***  start your thread processing
+    //                wait for the threads to finish
 
     // Field indicies
     int call_type_final_desc = get_field_index("call_type_final_desc");
@@ -359,10 +361,8 @@ main(int argc, char *argv[])
            onscene_datetime);
 
     char **row;
-    int i = 1; // for debug=
     while (row = csvnext())
     {
-        i++;
         char *call_type = row[call_type_final_desc][0]
                               ? row[call_type_final_desc]
                               : row[call_type_original_desc];
@@ -404,23 +404,9 @@ main(int argc, char *argv[])
     call_types[calltype_count] = NULL;
     printf("Setting call_types[%d] as NULL\n", calltype_count);
 
-    display_calltypes();
-
-    for (int i = 0; i < calltype_count; i++)
-    {
-        CallType *call = call_types[i];
-        // printf("Freeing (%i): %s\n", i, call->name);
-        free_calltype(call);
-    }
-
-    free(call_types);
-
-    csvclose();
-
-    // *** TO DO ***  start your thread processing
-    //                wait for the threads to finish
-
     // ***TO DO *** Display Data
+
+    display_calltypes();
 
     //**************************************************************
     // DO NOT CHANGE THIS BLOCK
@@ -438,4 +424,13 @@ main(int argc, char *argv[])
     //**************************************************************
 
     // ***TO DO *** cleanup
+
+    for (int i = 0; i < calltype_count; i++)
+    {
+        CallType *call = call_types[i];
+        free_calltype(call);
+    }
+
+    free(call_types);
+    csvclose();
 }

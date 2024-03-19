@@ -116,12 +116,6 @@ CallType *find_calltype(char *name)
 
 void update_response_time(ResponseTime *resp_time, double time_delta)
 {
-    call->total++;
-    for (int i = 0; call->subfields[i]; i++)
-    {
-        if (strcmp(call->subfields[i]->name, subfield) == 0)
-        {
-            ResponseTime *resp_time = call->subfields[i]->responseTimes[type];
     if (time_delta <= 120)
         resp_time->under_2_mins++;
     else if (time_delta > 120 && time_delta <= 300)
@@ -165,14 +159,15 @@ void free_row(char **row)
     free(row);
 }
 
+void print_header_field(char *text, int width)
+{
+    int l_pad = (width - strlen(text)) / 2;
+    int r_pad = strlen(text) % 2 == 0 ? l_pad + 1 : l_pad;
+    printf("%*s%s%*s|", l_pad, "", text, r_pad, "");
+}
+
 void display_calltypes()
 {
-    // Special "subfield" to hold the total.
-    Subfield *total = malloc(sizeof(Subfield));
-    total->name = strdup("Total");
-    total->responseTimes[DISPATCH] = init_response_time(DISPATCH);
-    total->responseTimes[ON_SCENE] = init_response_time(ON_SCENE);
-
     // Keep track of field sizes to pad columns.
     int max_name_len = 25;
     int max_digits = 0;
@@ -182,23 +177,12 @@ void display_calltypes()
     for (int i = 0; i < calltype_count; i++)
     {
         CallType *call = call_types[i];
-        max_col_value = call->total > max_col_value ? call->total : max_col_value;
+        max_col_value = call->total_count > max_col_value ? call->total_count : max_col_value;
 
         for (int j = 0; call->subfields[j]; j++)
         {
             size_t name_len = strlen(call->name);
             max_name_len = name_len > max_name_len ? name_len : max_name_len;
-
-            ResponseTime *dispatch = call->subfields[j]->responseTimes[DISPATCH];
-            ResponseTime *on_scene = call->subfields[j]->responseTimes[ON_SCENE];
-            dispatch->under_2_mins += dispatch->under_2_mins;
-            on_scene->under_2_mins += dispatch->under_2_mins;
-            dispatch->mins_6_10 += dispatch->mins_6_10;
-            on_scene->mins_6_10 += dispatch->mins_6_10;
-            dispatch->mins_3_5 += dispatch->mins_3_5;
-            on_scene->mins_3_5 += dispatch->mins_3_5;
-            dispatch->over_10_mins += dispatch->over_10_mins;
-            on_scene->over_10_mins += dispatch->over_10_mins;
         }
     }
 
@@ -249,14 +233,17 @@ void display_calltypes()
     // Print each rows.
     for (int i = 0; i < calltype_count; i++)
     {
-        // Print call type and total.
         CallType *call = call_types[i];
-        printf("%-*s | %*d | ", max_name_len, call->name, max_digits, call->total);
+        Subfield *total = call->call_total;
+
+        // Print call type and total.
+        printf("%-*s | %*d | ", max_name_len, call->name, max_digits, call->total_count);
 
         // Print count for each subfields.
-        for (int j = 0; call->subfields[j]; j++)
+        for (int j = -1; call->subfields[j]; j++)
         {
-            Subfield *subfield = call->subfields[j];
+            Subfield *subfield = j == -1 ? total : call->subfields[j];
+
             ResponseTime *dispatch = subfield->responseTimes[DISPATCH];
             ResponseTime *on_scene = subfield->responseTimes[ON_SCENE];
             printf("%*d | %*d | %*d | %*d | %*d | %*d | %*d | %*d | ",
@@ -280,7 +267,6 @@ void display_calltypes()
         printf("\n");
     }
     printf("max digits %d\n", max_digits);
-    free_subfield(total);
 }
 
 /**
@@ -354,7 +340,7 @@ main(int argc, char *argv[])
            onscene_datetime);
 
     char **row;
-    int i = 1; // for debug
+    int i = 1; // for debug=
     while (row = csvnext())
     {
         i++;

@@ -21,7 +21,6 @@
 
 static FILE *csv_file = NULL;
 static char **header = NULL;
-static char *current_line = NULL;
 static int lines_read = -1;
 
 /**
@@ -155,7 +154,7 @@ char **csvopen(char *filename)
     }
 
     // Read header
-    current_line = read_row();
+    char *current_line = read_row();
     if (!current_line)
     {
         fprintf(stderr, "Error reading line from CSV\n");
@@ -165,8 +164,11 @@ char **csvopen(char *filename)
 
     // Parse header
     header = parse_csv_line(current_line);
+    free(current_line);
     return header;
 }
+
+pthread_mutex_t mutexLock = PTHREAD_MUTEX_INITIALIZER;
 
 char **csvnext(void)
 {
@@ -174,12 +176,18 @@ char **csvnext(void)
         return NULL;
 
     // Read next line
-    free(current_line);
-    current_line = read_row();
-    if (!current_line)
-        return NULL;
 
-    return parse_csv_line(current_line);
+    pthread_mutex_lock(&mutexLock);
+    char *current_line = read_row();
+    pthread_mutex_unlock(&mutexLock);
+    if (!current_line)
+    {
+        free(current_line);
+        return NULL;
+    }
+    char **results = parse_csv_line(current_line);
+    free(current_line);
+    return results;
 }
 
 char **csvheader(void)
@@ -205,11 +213,6 @@ int csvclose(void)
         }
         free(header);
         header = NULL;
-    }
-    if (current_line)
-    {
-        free(current_line);
-        current_line = NULL;
     }
 
     return lines_read;

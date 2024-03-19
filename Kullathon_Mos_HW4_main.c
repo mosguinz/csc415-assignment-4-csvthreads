@@ -28,6 +28,9 @@
 int calltype_count = 0;
 CallType **call_types = NULL;
 char **header = NULL;
+int subfield_count = 0;
+char *subfields[4];
+char *subfield_type;
 
 ResponseTime *init_response_time(ResponseType type)
 {
@@ -212,15 +215,14 @@ void display_calltypes()
     }
     max_digits = max_digits > 5 ? max_digits : 5;
 
-    // TODO: Print headers
+    // Print headers
     int subfield_width = (max_digits + 2) * 4 + 3;
-    Subfield **subfields = call_types[0]->subfields;
 
     // Subfield names
     printf("%*s|", max_name_len + max_digits + 4, "");
     for (int i = -1; subfields[i]; i++)
     {
-        char *name = i == -1 ? "Total" : subfields[i]->name;
+        char *name = i == -1 ? "Total" : subfields[i];
         print_header_field(name, subfield_width);
         print_header_field(name, subfield_width);
     }
@@ -239,7 +241,7 @@ void display_calltypes()
     int number_width = max_digits + 2;
     printf("%-*s |", max_name_len, "Call Type");
     print_header_field("Total", max_digits + 2);
-    for (int i = -1; subfields[i]; i++)
+    for (int i = 0; i< (subfield_count * 2) + 2; i++)
     {
         print_header_field("<2", number_width);
         print_header_field("3-5", number_width);
@@ -248,8 +250,22 @@ void display_calltypes()
     }
     printf("\n");
 
-    sort_calls();
+    // Print the line below the header.
+    for (int i = 0; i < max_name_len + max_digits + 4; i++)
+        printf("-");
+    printf("+");
+
+    for (int i = 0; i < (subfield_count * 2) + 2; i++)
+    {
+        for (int j = 0; j < subfield_width; j++)
+            printf("-");
+        printf("+");
+    }
+
+    printf("\n");
+
     // Print each rows.
+    sort_calls();
     for (int i = 0; i < calltype_count; i++)
     {
         CallType *call = call_types[i];
@@ -308,35 +324,8 @@ time_t parse_timestamp(char *ts)
     return -1;
 }
 
-main(int argc, char *argv[])
+void *process(void *args)
 {
-    //**************************************************************
-    // DO NOT CHANGE THIS BLOCK
-    // Time stamp start
-    struct timespec startTime;
-    struct timespec endTime;
-
-    clock_gettime(CLOCK_REALTIME, &startTime);
-    //**************************************************************
-
-    //***TO DO***  Look at arguments, initialize application
-
-    if (argc < 5)
-    {
-        fprintf(stderr, "Not enough arguments, expected 5, got %d\n", argc);
-        return -1;
-    }
-
-    char *filename = argv[1];
-    int threads = atoi(argv[2]);
-    char *subfield_type = argv[3];
-    char **subfields = &argv[4];
-
-    header = csvopen(filename);
-
-    // *** TO DO ***  start your thread processing
-    //                wait for the threads to finish
-
     // Field indicies
     int call_type_final_desc = get_field_index("call_type_final_desc");
     int call_type_original_desc = get_field_index("call_type_original_desc");
@@ -403,9 +392,58 @@ main(int argc, char *argv[])
     call_types = realloc(call_types, (calltype_count + 1) * sizeof(struct CallType *));
     call_types[calltype_count] = NULL;
     printf("Setting call_types[%d] as NULL\n", calltype_count);
+}
+
+main(int argc, char *argv[])
+{
+    //**************************************************************
+    // DO NOT CHANGE THIS BLOCK
+    // Time stamp start
+    struct timespec startTime;
+    struct timespec endTime;
+
+    clock_gettime(CLOCK_REALTIME, &startTime);
+    //**************************************************************
+
+    //***TO DO***  Look at arguments, initialize application
+
+    if (argc < 5)
+    {
+        fprintf(stderr, "Not enough arguments, expected 5, got %d\n", argc);
+        return -1;
+    }
+
+    char *filename = argv[1];
+    int thread_count = atoi(argv[2]);
+    subfield_type = argv[3];
+    for (int i = 4; argv[i]; i++)
+    {
+        subfields[subfield_count] = argv[i];
+        subfield_count++;
+    }
+
+    header = csvopen(filename);
+
+    // *** TO DO ***  start your thread processing
+    //                wait for the threads to finish
 
     // ***TO DO *** Display Data
 
+    pthread_t *threads = (pthread_t *)malloc(thread_count * sizeof(pthread_t));
+    int i = 0;
+    while (i < thread_count)
+    {
+        pthread_create(&threads[i], NULL, process, NULL);
+        i++;
+    }
+    i = 0;
+    while (i < thread_count)
+    {
+        pthread_join(threads[i], NULL);
+        i++;
+    }
+
+    process(NULL);
     display_calltypes();
 
     //**************************************************************

@@ -10,6 +10,7 @@
  * Description::
  *
  **************************************************************/
+#include <pthread.h>
 
 /**
  * Opens a CSV file, reads the first line (header), and returns a
